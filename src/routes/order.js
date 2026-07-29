@@ -302,13 +302,22 @@ router.post("/", async (req, res) => {
 
     total = parseFloat(total.toFixed(2));
 
-    const createdOrder = await Order.create({
-      customerId,
-      total,
-      discount,
-      orderDate: new Date(),
-      location,
-    });
+    const lastOrder = await Order.findOne({
+  order: [["orderNumber", "DESC"]],
+});
+
+const nextOrderNumber = lastOrder
+  ? lastOrder.orderNumber + 1
+  : 1000;
+
+const createdOrder = await Order.create({
+  customerId,
+  orderNumber: nextOrderNumber,
+  total,
+  discount,
+  orderDate: new Date(),
+  location,
+});
 
     const orderDetails = orderDetailsData.map((item) => ({
       ...item,
