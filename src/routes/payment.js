@@ -1,8 +1,22 @@
 const router = require("express").Router();
 const db = require("../../models");
-const { getReqTime, buildPurchaseHash, encodeBase64 } = require("../utils/payway");
+const { getReqTime, buildPurchaseHash, encodeBase64,buildCheckTransactionHash } = require("../utils/payway");
 const { Customer, Order, OrderDetail, Payment } = db;
+const axios = require("axios");
 
+/**
+ * @swagger
+ * tags:
+ *   name: Payment
+ */
+
+/**
+ * @swagger
+ * /api/v1/payment/{orderId}:
+ *   post:
+ *     summary: Create a payment for an order
+ *     tags: [Payment]
+ */
 router.post("/:orderId", async (req, res) => {
   const { orderId } = req.params;
   try {
@@ -31,9 +45,9 @@ router.post("/:orderId", async (req, res) => {
     });
 
     const req_time = getReqTime();
-console.log("req_time generated:", req_time);
-console.log("current UTC time:", new Date().toISOString());
-console.log("current PNH time:", new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" }));
+    console.log("req_time generated:", req_time);
+    console.log("current UTC time:", new Date().toISOString());
+    console.log("current PNH time:", new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" }));
 
     let paywayItems = JSON.stringify(
       order.orderDetails?.map((detail) => ({
@@ -44,8 +58,8 @@ console.log("current PNH time:", new Date().toLocaleString("en-US", { timeZone: 
     );
     paywayItems = encodeBase64(paywayItems);
 
-    const returnUrl = `${process.env.FRONTEND_URL}/checkout-page`;
-    const cancelUrl = `${process.env.FRONTEND_URL}/checkout-page`;
+    const returnUrl = `${process.env.FRONTEND_URL}/productPage?tranId=${paywayTranId}`;
+    const cancelUrl = `${process.env.FRONTEND_URL}/productPage`;
 
     const paymentPayload = {
       merchant_id: process.env.ABA_PAYWAY_MERCHANT_ID,
@@ -67,15 +81,15 @@ console.log("current PNH time:", new Date().toLocaleString("en-US", { timeZone: 
       currency: "USD",
       payment_gate: 0,
     };
-    
+
     const hash = buildPurchaseHash(paymentPayload);
     console.log("Final payload sent to ABA:", JSON.stringify({
-  req_time: paymentPayload.req_time,
-  tran_id: paymentPayload.tran_id,
-  return_url: paymentPayload.return_url,
-  cancel_url: paymentPayload.cancel_url,
-  hash: hash,
-}, null, 2));
+      req_time: paymentPayload.req_time,
+      tran_id: paymentPayload.tran_id,
+      return_url: paymentPayload.return_url,
+      cancel_url: paymentPayload.cancel_url,
+      hash: hash,
+    }, null, 2));
     return res.json({
       message: "Payment created successfully",
       data: {
@@ -95,6 +109,73 @@ console.log("current PNH time:", new Date().toLocaleString("en-US", { timeZone: 
   } catch (error) {
     console.error("Payment error:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.post("/:tranId/check", async (req, res) => {
+  try {
+    const { tranId } = req.params;
+
+    const payment = await Payment.findOne({
+      where: { paywayTranId: tranId },
+    });
+
+    if (!payment) {
+      return res.status(404).json({
+        message: "Payment not found",
+      });
+    }
+
+    const req_time = getReqTime();
+    const merchant_id = process.env.ABA_PAYWAY_MERCHANT_ID;
+    const tran_id = payment.paywayTranId;
+
+    const hash = buildCheckTransactionHash({ req_time, merchant_id, tran_id });
+
+    const payload = {
+      req_time,
+      merchant_id,
+      tran_id,
+      hash,
+    };
+    const response = await axios.post(
+      `${process.env.ABA_PAYWAY_BASE_URL}/api/payment-gateway/v1/payments/check-transaction-2`,
+      payload,
+    );
+    console.log("response from ABA", response.data);
+
+    const abaData = response.data;
+    const statusCode = abaData?.status?.code;
+    const paymentStatusCode = abaData?.data?.payment_status_code;
+    const paymentStatus = abaData?.data?.payment_status;
+
+    if (statusCode == "00") {
+      if (paymentStatusCode === 0 && paymentStatus === "APPROVED") {
+        payment.status = "PAID";
+        payment.paidAt =abaData?.data?.transaction_date;
+      } else if (
+        paymentStatus === "DECLINED" ||
+        paymentStatus === "FAILED" ||
+        paymentStatusCode !== 0
+      ) {
+        payment.status = "FAILED";
+      } else {
+        payment.status = "PENDING";
+      }
+
+      payment.remark = JSON.stringify(abaData);
+      await payment.save();
+    }
+
+    return res.json({
+      message: "Payment checked successfully",
+      data: {
+        payment: payment,
+        aba: abaData
+      }
+    })
+  } catch (error) {
+    console.error("Error", error);
   }
 });
 

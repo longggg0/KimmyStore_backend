@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
       isActive: DataTypes.BOOLEAN,
       size: DataTypes.STRING,
       description: DataTypes.TEXT,
-      skinType: DataTypes.STRING,
+      skinType: DataTypes.STRING
     },
     {
       sequelize,

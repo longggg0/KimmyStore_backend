@@ -14,12 +14,13 @@ const categoryRoute = require("./src/routes/category")
 const paymentRoute = require("./src/routes/payment")
 const fileupload = require("express-fileupload")
 const path = require("path");
+const os = require("os"); // ← ADD THIS
 const { where } = require('sequelize')
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
 const brandRoute = require("./src/routes/brand")
 const promotionRoute = require("./src/routes/promotion");
-const { startPromotionCron } = require("./src/crons/promotionCron"); // ← ADD THIS
+const { startPromotionCron } = require("./src/crons/promotionCron");
 
 const {User} = db
 
@@ -28,9 +29,12 @@ app.use(express.json())
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(
   fileupload({
-  limits:{fileSize: 5 * 1024 * 1024},
-  createParentPath: true
-}))
+    limits: { fileSize: 5 * 1024 * 1024 },
+    createParentPath: true,
+    useTempFiles: true,        // ← ADD THIS
+    tempFileDir: os.tmpdir(),  // ← ADD THIS
+  })
+)
 const port = 3000
 
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

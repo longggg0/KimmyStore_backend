@@ -7,7 +7,20 @@ const { Customer } = require("../../models");
 const crypto = require("crypto");
 const { sendOtpEmail } = require("../utils/mailer");
 
-// GET all customers
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Customer authentication endpoints
+ */
+
+/**
+ * @swagger
+ * /customers:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Get all customers
+ */
 router.get("/customers", async (req, res) => {
   try {
     const customers = await Customer.findAll({
@@ -37,7 +50,13 @@ router.get("/customers", async (req, res) => {
   }
 });
 
-// REGISTER — always creates 'user' role
+/**
+ * @swagger
+ * /register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register a new customer
+ */
 router.post("/register", async (req, res) => {
   try {
     const { username, email, phone, password } = req.body;
@@ -46,7 +65,7 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // 👇 Email format validation
+    // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
@@ -79,7 +98,13 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// LOGIN
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Login a customer
+ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -117,7 +142,13 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ── STEP 1: Request OTP ─────────────────────────────────────────
+/**
+ * @swagger
+ * /forgot-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Request OTP for password reset
+ */
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
@@ -144,7 +175,14 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
-// ── STEP 2: Verify OTP ──────────────────────────────────────────
+
+/**
+ * @swagger
+ * /verify-otp:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Verify OTP and receive a reset token
+ */
 router.post("/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -183,7 +221,13 @@ router.post("/verify-otp", async (req, res) => {
   }
 });
 
-// ── STEP 3: Reset Password ──────────────────────────────────────
+/**
+ * @swagger
+ * /reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Reset password using reset token
+ */
 router.post("/reset-password", async (req, res) => {
   try {
     const authHeader = req.headers.authorization;

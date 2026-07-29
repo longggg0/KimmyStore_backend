@@ -3,6 +3,12 @@ const router = express.Router();
 const { Op } = require("sequelize");
 const { Promotion, Product, Category } = require("../../models");
 
+/**
+ * @swagger
+ * tags:
+ *   name: Promotion
+ */
+
 const formatDate = (date) =>
   new Date(date).toLocaleDateString("en-US", {
     weekday: "long",
@@ -28,6 +34,13 @@ const formatCountdown = (ms) => {
   return `${seconds}s`;
 };
 
+/**
+ * @swagger
+ * /api/v3/promotion:
+ *   get:
+ *     summary: Get all promotions with pagination, search and status filter
+ *     tags: [Promotion]
+ */
 router.get("/", async (req, res) => {
   try {
     const page   = Number(req.query.page)  || 1;
@@ -102,6 +115,13 @@ router.get("/", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v3/promotion/active:
+ *   get:
+ *     summary: Get currently active promotions
+ *     tags: [Promotion]
+ */
 router.get("/active", async (req, res) => {
   try {
     const now = new Date();
@@ -141,6 +161,13 @@ router.get("/active", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v3/promotion/{id}:
+ *   get:
+ *     summary: Get a single promotion by id
+ *     tags: [Promotion]
+ */
 router.get("/:id", async (req, res) => {
   try {
     const now = new Date();
@@ -175,6 +202,13 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v3/promotion:
+ *   post:
+ *     summary: Create a new promotion
+ *     tags: [Promotion]
+ */
 // ── POST /api/v3/promotion ────────────────────────────────────────────────────
 router.post("/", async (req, res) => {
   try {
@@ -242,6 +276,13 @@ router.post("/", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v3/promotion/{id}:
+ *   put:
+ *     summary: Update a promotion
+ *     tags: [Promotion]
+ */
 // ── PUT /api/v3/promotion/:id ─────────────────────────────────────────────────
 router.put("/:id", async (req, res) => {
   try {
@@ -295,6 +336,13 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/v3/promotion/{id}:
+ *   delete:
+ *     summary: Delete a promotion
+ *     tags: [Promotion]
+ */
 router.delete("/:id", async (req, res) => {
   try {
     const promotion = await Promotion.findByPk(req.params.id);
