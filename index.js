@@ -57,7 +57,7 @@ app.use("/api/v3/users",userRouter)
 app.use("/api/v3/brand", brandRoute)
 app.use("/api/v1/payment",paymentRoute)
 
-app.get("api/v1/health",(req,res)=>{
+app.get("/api/v1/health",(req,res)=>{
   return res.json({
     message: 'ok'
   })
