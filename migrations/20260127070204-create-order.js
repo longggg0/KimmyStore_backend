@@ -1,4 +1,5 @@
 'use strict';
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -7,40 +8,50 @@ module.exports = {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
       },
+
       customerId: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
       },
+
       orderNumber: {
-        type: DataTypes.INTEGER,
+        type: Sequelize.STRING,
+        allowNull: false,
         unique: true,
-        autoIncrement: true
       },
 
       total: {
-        type: Sequelize.DECIMAL
+        type: Sequelize.DECIMAL,
+        defaultValue: 0,
       },
+
       discount: {
-        type: Sequelize.DECIMAL
+        type: Sequelize.DECIMAL,
+        defaultValue: 0,
       },
+
       orderDate: {
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
       },
+
       location: {
-        type: Sequelize.TEXT
+        type: Sequelize.TEXT,
       },
+
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
       },
+
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
-      }
+        type: Sequelize.DATE,
+      },
     });
   },
+
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('Orders');
-  }
+  },
 };
