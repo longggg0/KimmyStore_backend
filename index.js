@@ -57,6 +57,12 @@ app.use("/api/v3/users",userRouter)
 app.use("/api/v3/brand", brandRoute)
 app.use("/api/v1/payment",paymentRoute)
 
+app.use("api/v1/health",(req,res)=>{
+  return res.json({
+    message: 'ok'
+  })
+})
+
 app.get("/test", (req, res) => {
   res.json({ message: "server is working" });
 });
