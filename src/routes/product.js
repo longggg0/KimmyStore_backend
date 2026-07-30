@@ -501,22 +501,32 @@ router.get("/top-selling", async (req, res) => {
   try {
     const limit = Number(req.query.limit) || 5;
 
-    const topProductIds = await OrderDetail.findAll({
+    // Step 1: rank productIds by total qty sold, excluding orders whose product was deleted
+    const topProductsRaw = await OrderDetail.findAll({
       attributes: [
         "productId",
-        [Sequelize.fn("SUM", Sequelize.col("qty")), "totalSold"],
+        [Sequelize.fn("SUM", Sequelize.col("OrderDetail.qty")), "totalSold"],
       ],
-      group: ["productId"],
+      include: [
+        {
+          model: Product,
+          as: "product",
+          attributes: [], // don't select Product's columns here — just use it to filter
+          required: true, // inner join: drops OrderDetail rows for deleted products
+        },
+      ],
+      group: ["OrderDetail.productId"],
       order: [[Sequelize.literal('"totalSold"'), "DESC"]],
       limit,
     });
 
-    const productIds = topProductIds.map((item) => item.productId);
+    const productIds = topProductsRaw.map((r) => r.productId);
     const totalSoldMap = {};
-    topProductIds.forEach((item) => {
-      totalSoldMap[item.productId] = item.getDataValue("totalSold");
+    topProductsRaw.forEach((r) => {
+      totalSoldMap[r.productId] = Number(r.getDataValue("totalSold"));
     });
 
+    // Step 2: fetch full product details (with category/promotion) for just those ids
     const products = await Product.findAll({
       where: { id: { [Op.in]: productIds } },
       include: [
@@ -528,7 +538,7 @@ router.get("/top-selling", async (req, res) => {
     const result = products
       .map((p) => ({
         ...attachPromotion(p.toJSON()),
-        totalSold: Number(totalSoldMap[p.id]) || 0,
+        totalSold: totalSoldMap[p.id] || 0,
       }))
       .sort((a, b) => b.totalSold - a.totalSold);
 
