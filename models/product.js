@@ -9,6 +9,11 @@ module.exports = (sequelize, DataTypes) => {
         as: "category",
       });
 
+      Product.belongsTo(models.Brand, {
+        foreignKey: "brandId",
+        as: "brand",
+      });
+
       Product.hasMany(models.OrderDetail, {
         foreignKey: "productId",
         as: "orderDetails",
@@ -27,6 +32,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       name: DataTypes.STRING,
       categoryId: DataTypes.INTEGER,
+      brandId: DataTypes.INTEGER,
       price: DataTypes.DECIMAL,
       qty: DataTypes.INTEGER,
       isActive: DataTypes.BOOLEAN,
